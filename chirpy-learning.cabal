@@ -55,4 +55,4 @@ test-suite chirpy-learning-test
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/chirpy-learning
+  location: https://github.com/phasedchirp/chirpy-learning
