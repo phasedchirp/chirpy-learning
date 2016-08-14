@@ -7,11 +7,14 @@ module Lib
     -- , summarizeCov
     ) where
 
+import System.Random (randomRIO) -- temporary. need to replace this with poisson sampling.
+import Control.Monad (replicateM)
 import Data.Conduit
 import qualified Data.Conduit.List as CL
 import Control.Monad.Trans.Resource (ResourceT)
 
--- Roughly Welford's algorithm for online estimation of mean and variance.
+
+-- Haskell implementation of Welford's algorithm for online estimation of mean and variance.
 step :: (Floating a) => (a,a,a) -> a -> (a,a,a)
 step (n,m,m2) x = (nNew,mNew,m2New)
                   where delta = x-m
@@ -20,7 +23,7 @@ step (n,m,m2) x = (nNew,mNew,m2New)
                         m2New = m2+delta*(x-mNew)
 
 -- Takes starting point for estimators, returns conduit that incrementally updates
--- as data is received.
+-- as data is received. Needs some cleanup for extra layers of Maybe.
 cumulativeStats :: (Floating t, Monad m) => (t, t, t) -> ConduitM (Maybe t) (t, t, t) m b
 cumulativeStats s = do
   val <- await
@@ -81,3 +84,16 @@ covStep (x1,x2) (n,m1,m2,m12) = (nNew,m1New,m2New,m12New)
 --       summarize
 --     Nothing -> do
 --       summarize
+
+stepWeighted :: (Floating a) => (a,a,a) -> (a,a) -> (a,a,a)
+stepWeighted (n,m,m2) (x,w) = (nNew,mNew,m2New)
+                      where delta = x-m
+                            nNew = n + w
+                            r = delta*w/nNew
+                            mNew = m + r
+                            m2New = n*delta*r
+
+replicateWeighted :: Int -> ConduitM Double (IO [(Double,Int)]) IO ()
+replicateWeighted n = awaitForever $ (\x -> yield $ f x)
+  where f x = fmap (zipWith (,) (replicate n x)) rs
+        rs = replicateM n (randomRIO (1,5) :: IO Int)
