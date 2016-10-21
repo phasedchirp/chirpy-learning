@@ -1,5 +1,5 @@
-.hi
-.o
+*.hi
+*.o
 test.txt
 test3.txt
 Info.hs
