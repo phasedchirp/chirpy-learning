@@ -1,0 +1,9 @@
+.hi
+.o
+test.txt
+test3.txt
+Info.hs
+.stack-work
+.ghci
+unused
+log/*
