@@ -1,11 +1,6 @@
-module RPois
-    (rPois
-    ) where
+import System.Environment
+import System.Random (getStdGen,RandomGen(..),randomRs)
 
-import System.Random (RandomGen(..),randomRs)
-
-
--- https://en.wikipedia.org/wiki/Poisson_distribution#Generating_Poisson-distributed_random_variables
 
 -- inverse transform using sequential search
 qPois' :: Double -> Double -> Int -> Double -> Double -> Int
@@ -20,3 +15,12 @@ qPois l u = qPois' l u 0 (exp $ -l) (exp $ -l)
 -- Generate list of poisson-distributed random numbers
 rPois :: (RandomGen g) => g -> Double -> Int -> [Int]
 rPois g l n = map (qPois l) (take n $ randomRs (0,1) g)
+
+
+main = do
+    (l:x:_) <- getArgs
+    gen <- getStdGen
+    let n = read x :: Int
+        rate = read l :: Double
+        ps = rPois gen rate n
+    mapM_ putStrLn $ map show ps

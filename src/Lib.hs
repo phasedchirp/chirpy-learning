@@ -7,7 +7,7 @@ module Lib
     -- , summarizeCov
     ) where
 
-import System.Random (randomRIO) -- temporary. need to replace this with poisson sampling.
+import RPois
 import Control.Monad (replicateM)
 import Data.Conduit
 import qualified Data.Conduit.List as CL
@@ -93,7 +93,7 @@ stepWeighted (n,m,m2) (x,w) = (nNew,mNew,m2New)
                             mNew = m + r
                             m2New = n*delta*r
 
-replicateWeighted :: Int -> ConduitM Double (IO [(Double,Int)]) IO ()
-replicateWeighted n = awaitForever $ (\x -> yield $ f x)
-  where f x = fmap (zipWith (,) (replicate n x)) rs
-        rs = replicateM n (randomRIO (1,5) :: IO Int)
+-- replicateWeighted :: Int -> ConduitM Double (IO [(Double,Int)]) IO ()
+-- replicateWeighted n = awaitForever $ (\x -> yield $ f x)
+--   where f x = fmap (zipWith (,) (replicate n x)) rs
+--         rs = replicateM n (rPois 1)
