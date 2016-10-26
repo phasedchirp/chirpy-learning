@@ -19,6 +19,7 @@ hist(poisson.r,breaks=bins.r,freq = FALSE)
 qs = c(0.025,0.1,0.25,0.5,0.75,0.9,0.975,0.99,0.999,0.9999,0.99999)
 quantile(test$V1,probs=qs)
 quantile(poisson.r,probs=qs)
+qpois(qs,1)
 
 # Changing rate parameter:
 
@@ -36,3 +37,4 @@ hist(poisson.r.3,breaks=bins.r.3,freq = FALSE)
 qs = c(0.025,0.1,0.25,0.5,0.75,0.9,0.975,0.99,0.999,0.9999,0.99999)
 quantile(test3$V1,probs=qs)
 quantile(poisson.r.3,probs=qs)
+qpois(qs,3)

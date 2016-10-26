@@ -8,7 +8,8 @@ module Lib
     ) where
 
 import RPois
-import Control.Monad (replicateM)
+import System.Random (getStdGen)
+import Control.Monad (replicateM,join)
 import Data.Conduit
 import qualified Data.Conduit.List as CL
 import Control.Monad.Trans.Resource (ResourceT)
@@ -23,19 +24,17 @@ step (n,m,m2) x = (nNew,mNew,m2New)
                         m2New = m2+delta*(x-mNew)
 
 -- Takes starting point for estimators, returns conduit that incrementally updates
--- as data is received. Needs some cleanup for extra layers of Maybe.
+-- as data is received. `join` needed because twitter-conduit results introduce an
+-- extra layer of Maybe.
 cumulativeStats :: (Floating t, Monad m) => (t, t, t) -> ConduitM (Maybe t) (t, t, t) m b
 cumulativeStats s = do
   val <- await
-  case val of
-    Just (Just x) -> do
+  case (join val) of
+    Just x -> do
       let updated = step s x
       yield updated
       cumulativeStats updated
-    Just Nothing -> do
-      cumulativeStats s
     Nothing -> do
-      yield s
       cumulativeStats s
 
 -- Function to print out estimates as they are updated.
@@ -58,6 +57,29 @@ covStep (x1,x2) (n,m1,m2,m12) = (nNew,m1New,m2New,m12New)
                                       m1New = m1 + delta1
                                       m2New = m2 + delta2
                                       m12New = m12 + n*delta1*delta2 - m12/nNew
+
+
+
+stepWeighted :: (Floating a) => (a,a,a) -> (a,a) -> (a,a,a)
+stepWeighted (n,m,m2) (x,w) = (nNew,mNew,m2New)
+                      where delta = x-m
+                            nNew = n + w
+                            r = delta*w/nNew
+                            mNew = m + r
+                            m2New = n*delta*r
+
+-- replicateWeighted :: Int -> ConduitM Double [(Double, Int)] (ResourceT IO) b
+-- replicateWeighted n = do
+--   val <- await
+--   case val of Just x -> do
+--                 g <- getStdGen
+--                 yield $ zip (replicate n x) (rPois g 1 n)
+--                 replicateWeighted n
+--               Nothing -> do
+--                 replicateWeighted n
+-- replicateWeighted n = awaitForever $ (\x -> yield $ f x)
+  -- where f x = fmap (zipWith (,) (replicate n x)) rs
+        -- rs = replicate n (rPois g 1 n)
 
 --
 -- cumulativeStats' :: (Floating t, Monad m) => (t, t, t) -> ConduitM (Maybe t) (t, t, t) m b
@@ -84,16 +106,3 @@ covStep (x1,x2) (n,m1,m2,m12) = (nNew,m1New,m2New,m12New)
 --       summarize
 --     Nothing -> do
 --       summarize
-
-stepWeighted :: (Floating a) => (a,a,a) -> (a,a) -> (a,a,a)
-stepWeighted (n,m,m2) (x,w) = (nNew,mNew,m2New)
-                      where delta = x-m
-                            nNew = n + w
-                            r = delta*w/nNew
-                            mNew = m + r
-                            m2New = n*delta*r
-
--- replicateWeighted :: Int -> ConduitM Double (IO [(Double,Int)]) IO ()
--- replicateWeighted n = awaitForever $ (\x -> yield $ f x)
---   where f x = fmap (zipWith (,) (replicate n x)) rs
---         rs = replicateM n (rPois 1)
