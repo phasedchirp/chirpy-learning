@@ -2,6 +2,7 @@ module Lib
     ( step
     -- , covStep
     , cumulativeStats
+    , cumulativeStatsWeighted
     -- , cumulativeStats'
     , summarizeMean
     -- , summarizeCov
@@ -60,14 +61,27 @@ covStep (x1,x2) (n,m1,m2,m12) = (nNew,m1New,m2New,m12New)
 
 
 
-stepWeighted :: (Floating a) => (a,a,a) -> (a,a) -> (a,a,a)
+stepWeighted :: (Floating a) => (a,a,a) -> (a,Int) -> (a,a,a)
 stepWeighted (n,m,m2) (x,w) = (nNew,mNew,m2New)
-                      where delta = x-m
-                            nNew = n + w
-                            r = delta*w/nNew
+                      where w' = (fromIntegral w)
+                            delta = x-m
+                            nNew = n + w'
+                            r = delta*w'/nNew
                             mNew = m + r
                             m2New = n*delta*r
 
+cumulativeStatsWeighted :: (Floating t, Monad m) => (t, t, t) -> ConduitM (Maybe t,Int) (t, t, t) m b
+cumulativeStatsWeighted s = do
+  val <- await
+  case val of
+    Just (Just x,w) -> do
+      let updated = stepWeighted s (x,w)
+      yield updated
+      cumulativeStatsWeighted updated
+    Just _ -> do
+      cumulativeStatsWeighted s
+    Nothing -> do
+      cumulativeStatsWeighted s
 -- replicateWeighted :: Int -> ConduitM Double [(Double, Int)] (ResourceT IO) b
 -- replicateWeighted n = do
 --   val <- await

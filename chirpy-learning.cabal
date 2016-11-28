@@ -38,6 +38,7 @@ executable chirpy-learning-exe
                      , transformers
                      , resourcet
                      , twitter-types-lens
+                     , random
   default-language:    Haskell2010
 
 test-suite chirpy-learning-test
